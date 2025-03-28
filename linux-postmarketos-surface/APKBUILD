@@ -1,0 +1,57 @@
+# Maintainer: no
+# Linux stable kernel with modifications for Microsoft Surface devices
+
+_flavor="postmarketos-surface"
+pkgname=linux-$_flavor
+pkgver=6.13.6
+pkgrel=1
+pkgdesc="Linux kernel fork for Microsoft Surface devices"
+arch="amd64"
+_carch="x86_64"
+url="https://github.com/linux-surface"
+license="GPL-2.0-only"
+options="!check !tracedeps"
+makedepends="bash bison findutils flex installkernel openssl-dev perl zstd python3"
+
+_config="config-$_flavor.$arch"
+_tag="6.13.6"
+
+source="
+	linux-$_tag.tar.gz::https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-$_tag.tar.gz
+	0001-secureboot.patch
+	0002-surface3.patch
+	0003-mwifiex.patch
+	0004-ath10k.patch
+	0005-ipts.patch
+	0006-ithc.patch
+	0007-surface-sam.patch
+	0008-surface-sam-over-hid.patch
+	0009-surface-button.patch
+	0010-surface-typecover.patch
+	0011-surface-shutdown.patch
+	0012-surface-gpe.patch
+	0013-cameras.patch
+	0014-amd-gpio.patch
+	0015-rtc.patch
+"
+builddir="$srcdir/linux-$_tag"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$arch" .config
+}
+
+build () {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="gcc"
+}
+
+package () {
+	if [ -e "$builddir/arch/$_carch/boot/bzImage" ]; then
+		install -Dm644 "$builddir/arch/$_carch/boot/bzImage" "$pkgdir/boot/vmlinuz-postmarketos-surface"
+	fi
+	
+	make modules_install \
+		ARCH="$_carch" \
+		INSTALL_MOD_PATH="$pkgdir"
+}
